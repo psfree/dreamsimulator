@@ -75,7 +75,7 @@ int main()
 
         int64_t numPearls = 0;
         for (int i = 0; i < 262; i++) {
-            if (randFloat() <= 0.0473f) {
+            if (rand() % 423 <= 20) {
                 numPearls++;
             }
         }

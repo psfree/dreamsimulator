@@ -1,7 +1,10 @@
 #include <signal.h>
 #include <iostream>
-#include <stdint-gcc.h>
+#include <stdint.h>
 #include <fstream>
+#include <random>
+#include <chrono>
+using namespace std::chrono;
 
 #include "ansi.hpp"
 
@@ -67,46 +70,56 @@ int main()
     for (int i = 0; i < 306; i++) {
         rodInstances[i] = 0;
     }
-
+    
+    std::default_random_engine generator;
+  	std::binomial_distribution<int> distribution(262,20.0/423);
+  	std::default_random_engine generator2;
+  	std::binomial_distribution<int> distribution2(305,0.5);
+  	int x = distribution(generator);
+	auto start = high_resolution_clock::now(); 
     while(running) {
         iterations++;
         // Iterations Message
-        std::cout << ansi::cursor_pos(4, iterationsMsg.length() + 1) << ansi::erase_in_line() << iterations << std::endl;
-
-        int64_t numPearls = 0;
-        for (int i = 0; i < 262; i++) {
-            if (rand() % 423 < 20) {
-                numPearls++;
-            }
-        }
+		if(iterations==-1){
+			auto stop = high_resolution_clock::now(); 
+			auto duration = duration_cast<microseconds>(stop - start); 
+			int m=duration.count();
+			std::cout.clear();
+			system("clear");
+			std::cout << m/1000000.0<< std::endl; 
+			int x;
+			std::cin >> x;
+		}
+        int64_t numPearls = distribution(generator);
+        
         pearlInstances[numPearls]++;
         pearlSum += numPearls;
         maxPearls = std::max(maxPearls, numPearls);
-        // Pearl Message
-        std::cout << ansi::cursor_pos(14, pearlMsg.length() + 1) << ansi::erase_in_line() << numPearls << std::endl;
+        
 
-        int64_t numRods = 0;
-        for (int i = 0; i < 305; i++) {
-            if (randFloat() <= 0.5f) {
-                numRods++;
-            }
-        }
+        int64_t numRods = distribution2(generator2);
         rodInstances[numRods]++;
         rodsSum += numRods;
         maxRods = std::max(maxRods, numRods);
-        // Rods Message
-        std::cout << ansi::cursor_pos(15, rodsMsg.length() + 1) << ansi::erase_in_line() << numRods << std::endl;
+        if(iterations%1000000==0){
+        	std::cout << ansi::cursor_pos(4, iterationsMsg.length() + 1) << ansi::erase_in_line() << iterations << std::endl;
+			// Pearl Message
+        	std::cout << ansi::cursor_pos(14, pearlMsg.length() + 1) << ansi::erase_in_line() << numPearls << std::endl;
+			 // Rods Message
+        	std::cout << ansi::cursor_pos(15, rodsMsg.length() + 1) << ansi::erase_in_line() << numRods << std::endl;
 
-        // Pearl Avg Message
-        pearlAvg = pearlSum * 1.0 / iterations;
-        std::cout << ansi::cursor_pos(5, pearlAvgMsg.length() + 1) << ansi::erase_in_line() << pearlAvg << std::endl;
-        // Rods Avg Message
-        rodsAvg = rodsSum * 1.0 / iterations;
-        std::cout << ansi::cursor_pos(6, rodsAvgMsg.length() + 1) << ansi::erase_in_line() << rodsAvg << std::endl;
-        // Pearl Max Message
-        std::cout << ansi::cursor_pos(7, pearlMaxMsg.length() + 1) << ansi::erase_in_line() << maxPearls << std::endl;
-        // Rods Max Message
-        std::cout << ansi::cursor_pos(8, rodsMaxMsg.length() + 1) << ansi::erase_in_line() << maxRods << std::endl;
+       		// Pearl Avg Message
+        	pearlAvg = pearlSum * 1.0 / iterations;
+        	std::cout << ansi::cursor_pos(5, pearlAvgMsg.length() + 1) << ansi::erase_in_line() << pearlAvg << std::endl;
+        	// Rods Avg Message
+        	rodsAvg = rodsSum * 1.0 / iterations;
+        	std::cout << ansi::cursor_pos(6, rodsAvgMsg.length() + 1) << ansi::erase_in_line() << rodsAvg << std::endl;
+        	// Pearl Max Message
+        	std::cout << ansi::cursor_pos(7, pearlMaxMsg.length() + 1) << ansi::erase_in_line() << maxPearls << std::endl;
+        	// Rods Max Message
+        	std::cout << ansi::cursor_pos(8, rodsMaxMsg.length() + 1) << ansi::erase_in_line() << maxRods << std::endl;
+		}
+       
     }
 
     //      Iterations                         Pearl Avg          Rods Avg          Pearls Max          Rods Max

@@ -4,24 +4,54 @@
 #include <fstream>
 #include <random>
 #include <chrono>
+
+using namespace std;
 using namespace std::chrono;
 
 #include "ansi.hpp"
 
+#define TIMED_ITERATION 10000000
 bool running = true;
 
 void sigIntHandler(int s){
     running = false;
 }
 
-float randFloat() {
-    return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-}
+//an implementation of the Java Random() RNG
+class JavaRandom {
+	public:
+	typedef int result_type;
+	uint64_t seed=1;
+	JavaRandom(uint64_t s){
+		seed=s;
+	}
+	static constexpr int min(){
+		return 1;
+	}
+	static constexpr int max(){
+		return 2147483647;
+	}
+	inline result_type next(int bits){
+		seed=((seed)*0x5DEECE66DL+0xBL)&((1L << 48) - 1);
+		return seed >> (48 - bits);
+	}
+	inline result_type nextInt(){
+		return next(32);
+	}
+	
+	result_type operator()() {
+        return nextInt();
+	}
+};
 
-int main()
+int main(int argc, char * argv[])
 {
     srand(time(0));
-
+	bool timer=false;
+	
+	if(argc>=2 && string(argv[1]).compare("-t")==0){
+		timer=true;
+	}
     signal(SIGINT, sigIntHandler);
 
     std::ofstream file;
@@ -71,37 +101,34 @@ int main()
         rodInstances[i] = 0;
     }
     
-    std::default_random_engine generator;
+    JavaRandom j(123);
   	std::binomial_distribution<int> distribution(262,20.0/423);
-  	std::default_random_engine generator2;
   	std::binomial_distribution<int> distribution2(305,0.5);
-  	int x = distribution(generator);
 	auto start = high_resolution_clock::now(); 
     while(running) {
         iterations++;
-        // Iterations Message
-		if(iterations==-1){
+		if(timer==true && iterations==TIMED_ITERATION){
 			auto stop = high_resolution_clock::now(); 
 			auto duration = duration_cast<microseconds>(stop - start); 
 			int m=duration.count();
 			std::cout.clear();
 			system("clear");
-			std::cout << m/1000000.0<< std::endl; 
-			int x;
-			std::cin >> x;
+			std::cout << "Took " << m/1000000.0<< " to perform "<< TIMED_ITERATION<<" iterations"<< std::endl; 
+			return 0;
 		}
-        int64_t numPearls = distribution(generator);
+        int64_t numPearls = distribution(j);
         
         pearlInstances[numPearls]++;
         pearlSum += numPearls;
         maxPearls = std::max(maxPearls, numPearls);
         
 
-        int64_t numRods = distribution2(generator2);
+        int64_t numRods = distribution2(j);
         rodInstances[numRods]++;
         rodsSum += numRods;
         maxRods = std::max(maxRods, numRods);
-        if(iterations%1000000==0){
+        if(iterations%10000000==0){
+            // Iterations Message
         	std::cout << ansi::cursor_pos(4, iterationsMsg.length() + 1) << ansi::erase_in_line() << iterations << std::endl;
 			// Pearl Message
         	std::cout << ansi::cursor_pos(14, pearlMsg.length() + 1) << ansi::erase_in_line() << numPearls << std::endl;
